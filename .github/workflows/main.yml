@@ -1,16 +1,33 @@
-name: Publish Docker image
+name: GitHub Actions Demo
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 
 on:
   push:
-    branches: 
+    branches:
       - main
     tags:
       - 'v*.*.*'
-    
 
 jobs:
+  test-job:
+    name: Simple Test Job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print greeting
+        run: echo "Hello, GitHub Actions is working! 🎉"
+
+      - name: Show event info
+        run: |
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch/Tag: ${{ github.ref_name }}"
+          echo "Commit SHA: ${{ github.sha }}"
+
+      
+
   push_to_registry:
     name: Push Docker image to Docker Hub
+    needs: test-job
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -32,12 +49,11 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: dgfc45/web-medical-ui
-            tags: 
-              type=semver,pattern={{version}}
-              type=semver,pattern={{major}}.{{minor}}
-              type=semver,pattern={{major}}
-              type=sha,prefix=sha-,format=short
-              type=raw,value=latest,enable={{is_default_branch}}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         id: push
