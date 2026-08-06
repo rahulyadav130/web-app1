@@ -88,6 +88,9 @@ jobs:
         run: |
           sed -i "s|image:.*|image: dgfc45/web-medical-ui:${{ needs.push_to_registry.outputs.image_tag }}|g" k8s/deployment.yaml
 
+      - name: check image details like tag etc
+        run: |
+          cat cat k8s/deployment.yaml | grep image
       - name: Deploy to cluster
         run: |
           kubectl apply -f k8s/deployment.yaml
