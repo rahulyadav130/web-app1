@@ -83,6 +83,9 @@ jobs:
 
       - name: Verify cluster access
         run: kubectl get nodes
+      - name: Checking the value of image tag
+        run: |
+          echo "Image tag received: '${{ needs.push_to_registry.outputs.image_tag }}'"
 
       - name: Update image tag in deployment
         run: |
