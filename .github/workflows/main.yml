@@ -1,4 +1,4 @@
-name: GitHub Actions Demo
+name: GitHub Actions Demo1
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 
 on:
@@ -11,7 +11,7 @@ on:
 jobs:
   test-job:
     name: Simple Test Job
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, vm1]
     steps:
       - name: Print greeting
         run: echo "Hello, GitHub Actions is working! 🎉"
@@ -71,3 +71,24 @@ jobs:
           subject-name: index.docker.io/dgfc45/web-medical-ui
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+          
+  deploy_to_k8s:
+    name: Deploy to Kubernetes
+    needs: push_to_registry
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: [self-hosted, vm1]
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v6
+
+      - name: Verify cluster access
+        run: kubectl get nodes
+
+      - name: Update image tag in deployment
+        run: |
+          sed -i "s|image:.*|image: dgfc45/web-medical-ui:${{ needs.push_to_registry.outputs.image_tag }}|g" k8s/deployment.yaml
+
+      - name: Deploy to cluster
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl rollout status deployment/web-medical-ui --timeout=120s
