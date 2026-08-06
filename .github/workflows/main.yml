@@ -11,7 +11,7 @@ on:
 jobs:
   test-job:
     name: Simple Test Job
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, vm1]
     steps:
       - name: Print greeting
         run: echo "Hello, GitHub Actions is working! 🎉"
