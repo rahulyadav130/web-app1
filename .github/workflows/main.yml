@@ -1,7 +1,12 @@
 name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
 
 jobs:
   test-job:
@@ -15,12 +20,54 @@ jobs:
         run: |
           echo "Triggered by: ${{ github.actor }}"
           echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
+          echo "Branch/Tag: ${{ github.ref_name }}"
           echo "Commit SHA: ${{ github.sha }}"
 
+      
+
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    needs: test-job
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
       - name: Check out the repo
         uses: actions/checkout@v6
 
-      - name: List repo files
-        run: ls -la
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKERUSERNAME }}
+          password: ${{ secrets.DOCKERPASSWORD }}
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: dgfc45/web-medical-ui
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: index.docker.io/dgfc45/web-medical-ui
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
