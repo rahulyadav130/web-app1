@@ -90,7 +90,7 @@ jobs:
 
       - name: check image details like tag etc
         run: |
-          cat cat k8s/deployment.yaml | grep image
+          cat  k8s/deployment.yaml | grep image
       - name: Deploy to cluster
         run: |
           kubectl apply -f k8s/deployment.yaml
